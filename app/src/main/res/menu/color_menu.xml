@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <group android:checkableBehavior="single">
+        <item
+            android:id="@+id/black"
+            android:icon="@drawable/black"
+            android:title=""/>
+
+        <item
+            android:id="@+id/c6d6e3"
+            android:icon="@drawable/c6d6e3"
+            android:title=""/>
+
+        <item
+            android:id="@+id/d2cbc3"
+            android:icon="@drawable/d2cbc3"
+            android:title=""/>
+
+        <item
+            android:id="@+id/d2dbc6"
+            android:icon="@drawable/d2dbc6"
+            android:title=""/>
+
+        <item
+            android:id="@+id/dedede"
+            android:icon="@drawable/dedede"
+            android:title=""/>
+
+        <item
+            android:id="@+id/e2c8a7"
+            android:icon="@drawable/e2c8a7"
+            android:title=""/>
+
+        <item
+            android:id="@+id/ede4dd"
+            android:icon="@drawable/ede4dd"
+            android:title=""/>
+
+        <item
+            android:id="@+id/efdec4"
+            android:icon="@drawable/efdec4"
+            android:title=""/>
+
+        <item
+            android:id="@+id/f0deda"
+            android:icon="@drawable/f0deda"
+            android:title=""/>
+    </group>
+</menu>
