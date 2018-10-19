@@ -23,7 +23,7 @@
 
         <ScrollView
             android:id="@+id/contentScrollView"
-            android:layout_weight="14"
+            android:layout_weight="15"
             android:layout_width="match_parent"
             android:layout_height="0dp">
 
@@ -31,7 +31,8 @@
                 android:id="@+id/content"
                 android:textSize="50px"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content" />
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="6dp"/>
         </ScrollView>
         <LinearLayout
             android:orientation="horizontal"

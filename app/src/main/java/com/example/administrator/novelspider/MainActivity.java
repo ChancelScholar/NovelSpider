@@ -17,17 +17,25 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.administrator.novelspider.po.ReadingRecord;
 import com.example.administrator.novelspider.util.StatusBarCompat;
 import com.example.administrator.novelspider.util.StringParser;
 
+import org.litepal.LitePal;
+import org.litepal.crud.DataSupport;
+
+import java.util.List;
+
 public class MainActivity extends AppCompatActivity implements View.OnClickListener{
 
-    EditText bookId=null;         //书号
-    EditText chapterId=null;     //章节号
-    Button confirm=null;    //确认按钮
-    String code;     //颜色十六进制代码
-    LinearLayout mainFrame;     //主布局管理器
-    TextView webLink;       //网页链接文本
+    private EditText bookId=null;         //书号
+    private EditText chapterId=null;     //章节号
+    private Button confirm=null;    //确认按钮
+    private String code;     //颜色十六进制代码
+    private LinearLayout mainFrame;     //主布局管理器
+    private TextView webLink;       //网页链接文本
+    boolean isCreateDB = false;    //是否创建数据库标志
+    private List<ReadingRecord> books = null;      //书目列表
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -57,12 +65,28 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     public void onResume(){
         super.onResume();
+        //创建数据库
+        if(!isCreateDB){
+            LitePal.getDatabase();
+            //使用SharePreference存储一些设置信息
+            SharedPreferences.Editor editor = getSharedPreferences("readingSet",MODE_PRIVATE).edit();
+            editor.putBoolean("isCreateDB",true);
+            editor.apply();
+        }
+        //获取书目记录
+        books = DataSupport.findAll(ReadingRecord.class);
         //为了在活动置顶时重新获得书号和章节号，在onResume方法中获取存储的书号以及章节号
-        SharedPreferences preferences = getSharedPreferences("novel_data",MODE_PRIVATE);
-        String bookIdNum = preferences.getString("book_id","");
-        String chapterIdNum = preferences.getString("chapter_id", "");
+        String bookIdNum = "";
+        String chapterIdNum = "";
+        for(ReadingRecord book:books){
+            bookIdNum = book.getBookNum();
+            chapterIdNum = book.getChapterNum();
+        }
+        //获取用户自定义的阅读设置
+        SharedPreferences preferences = getSharedPreferences("readingSet",MODE_PRIVATE);
         float textSize = preferences.getFloat("textSize",25);
         String code = preferences.getString("backgroundColor","#C7EDCC");
+        isCreateDB = preferences.getBoolean("isCreateDB",false);
         bookId.setText(bookIdNum);
         chapterId.setText(chapterIdNum);
         //根据用户设置来初始化字体大小
