@@ -2,8 +2,8 @@
 <litepal>
     <dbname value="BookStore"></dbname>
 
-    <version value="1"></version>
+    <version value="2"></version>
     <list>
-        <mapping class="com.example.administrator.novelspider.po.ReadingRecord"></mapping>
+        <mapping class="com.example.administrator.novelspider.po.Book"></mapping>
     </list>
 </litepal>

@@ -30,7 +30,7 @@ public class SpiderTask extends AsyncTask<String, Integer, Integer> {
     protected Integer doInBackground(String... params){
         String downloadUrl = params[0];
         try {
-            Document page = Jsoup.connect(downloadUrl).get();
+            Document page = Jsoup.connect(downloadUrl).timeout(100000).get();     //设置等待时间最大为10秒
             Element body = page.body();
             //抽取小说名，小说章节标题、内容、上一章链接，下一章链接
             String novelName = body.getElementsByClass("con_top").get(0).child(2).text();

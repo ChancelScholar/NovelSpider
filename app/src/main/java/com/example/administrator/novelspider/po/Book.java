@@ -1,5 +1,7 @@
 package com.example.administrator.novelspider.po;
 
+import android.graphics.Bitmap;
+
 import org.litepal.crud.DataSupport;
 
 /**
@@ -7,11 +9,14 @@ import org.litepal.crud.DataSupport;
  *记录书目当前阅读的位置表
  */
 
-public class ReadingRecord extends DataSupport{
+public class Book extends DataSupport{
     private int id;
     private String bookNum;    //爬取的网站的书号
     private String name;         //书名
     private String chapterNum;  //当前的爬取的网站的章节号
+    private String bookImage;   //书籍封面图片文件名
+    private String imageUrl;    //封面路径
+    private Bitmap bitmap;      //图像文件
 
     public int getId(){
         return id;
@@ -43,5 +48,29 @@ public class ReadingRecord extends DataSupport{
 
     public void setChapterNum(String chapterNum){
         this.chapterNum = chapterNum;
+    }
+
+    public String getBookImage() {
+        return bookImage;
+    }
+
+    public void setBookImage(String bookImage) {
+        this.bookImage = bookImage;
+    }
+
+    public String getImageUrl() {
+        return imageUrl;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
+    }
+
+    public Bitmap getBitmap() {
+        return bitmap;
+    }
+
+    public void setBitmap(Bitmap bitmap) {
+        this.bitmap = bitmap;
     }
 }

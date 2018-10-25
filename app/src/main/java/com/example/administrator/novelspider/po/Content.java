@@ -11,6 +11,7 @@ public class Content {
     private String lastChapterLink;    //上一章链接
     private String nextChapterLink;    //下一章链接
     private String bookName;         //书名
+    private String imageUrl;         //封面url
 
     public String getLastChapterLink() {
         return lastChapterLink;
@@ -50,5 +51,13 @@ public class Content {
 
     public void setContent(String content){
         this.content = content;
+    }
+
+    public String getImageUrl() {
+        return imageUrl;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
     }
 }

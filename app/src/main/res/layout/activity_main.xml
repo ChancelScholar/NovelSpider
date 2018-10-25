@@ -1,56 +1,44 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/main_frame"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:orientation="vertical"
-    android:background="@color/backgroundColor"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="请到以下网站查找书目，进入所需要看的章节，查看链接上的书号以及章节号（第一个数字为书号，第二个数字为章节号）："
-        android:textSize="50px"/>
-    <TextView
-        android:id="@+id/web_link"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="http://www.bkxs.net/"
-        android:textSize="50px"
-        android:textIsSelectable="true"/>
+        android:text="书架"
+        android:textSize="30dp"
+        android:gravity="center"
+        android:background="#E2C8A7"/>
 
-    <TextView
+    <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="\n链接如http://www.bkxs.net/bkxs/69888/28239292.html"
-        android:textSize="50px"/>
+        android:layout_height="match_parent"
+        android:background="#E2C8A7">
 
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="书号："
-        android:textSize="50px"/>
+        <GridView
+            android:id="@+id/gridview"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_margin="20dp"
+            android:columnWidth="90dp"
+            android:numColumns="3"
+            android:verticalSpacing="10dp"
+            android:horizontalSpacing="10dp"
+            android:stretchMode="columnWidth"/>
 
-    <EditText
-        android:id="@+id/book_id"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
+        <android.support.design.widget.FloatingActionButton
+            android:id="@+id/add_book"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|end"
+            android:layout_margin="16dp"
+            android:src="@drawable/addnovel"
+            app:backgroundTint="@color/colorBlue"
+            app:elevation="8dp" />
+    </FrameLayout>
 
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="章节号："
-        android:textSize="50px"/>
 
-    <EditText
-        android:id="@+id/chapter_id"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
-
-    <Button
-        android:id="@+id/confirm"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="确定"
-        android:textAllCaps="false"/>
 </LinearLayout>

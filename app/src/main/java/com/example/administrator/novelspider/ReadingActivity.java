@@ -22,14 +22,15 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.administrator.novelspider.Adapter.BackgroundColorAdapter;
+import com.example.administrator.novelspider.dbhelper.BookDatabaseHelper;
 import com.example.administrator.novelspider.listener.ProcessListener;
 import com.example.administrator.novelspider.po.BackgroundColor;
 import com.example.administrator.novelspider.po.Content;
-import com.example.administrator.novelspider.po.ReadingRecord;
+import com.example.administrator.novelspider.po.Book;
 import com.example.administrator.novelspider.service.SpiderService;
+import com.example.administrator.novelspider.util.HandleDatabeseUtil;
 import com.example.administrator.novelspider.util.StatusBarCompat;
 import com.example.administrator.novelspider.util.StringParser;
-
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -40,7 +41,7 @@ import java.util.List;
 
 public class ReadingActivity extends AppCompatActivity implements View.OnClickListener{
     private String bookId;            //书号
-    private String chapterId;        //章节号+
+    private String chapterId;        //章节号
     private String bookName;  //书名
     private TextView contentText;    //文章内容
     private TextView chapterText;    //文章标题
@@ -53,9 +54,10 @@ public class ReadingActivity extends AppCompatActivity implements View.OnClickLi
     private List<BackgroundColor> colorList = new ArrayList<>();    //背景色列表
     private Button increaseTextSizeBtn;     //增加文本字体大小按钮
     private Button decreaseTextSizeBtn;     //减小文本字体大小按钮
-    private static float textSize = 25;    //默认大小为30px
+    private float textSize = 25;    //默认大小为30px
     private LinearLayout masterLayout;         //主界面的布局管理器
-    private static String colorCode = "#C7EDCC";    //默认背景色
+    private String colorCode = "#C7EDCC";    //默认背景色
+    private BookDatabaseHelper dbHelper;       //用于数据库操作
     //页面获取完成回调接口
     private ProcessListener processListener = new ProcessListener() {
         @Override
@@ -102,20 +104,19 @@ public class ReadingActivity extends AppCompatActivity implements View.OnClickLi
         increaseTextSizeBtn = (Button) findViewById(R.id.increase_text_size);
         decreaseTextSizeBtn = (Button) findViewById(R.id.decrease_text_size);
         masterLayout = (LinearLayout) findViewById(R.id.master_layout);
+        dbHelper = new BookDatabaseHelper(this, "BookStore.db", null, 2);
         Intent intent = getIntent();
         bookId = intent.getStringExtra("book_id");
         chapterId = intent.getStringExtra("chapter_id");
-        String bookUrl = bookLibURL + "/bkxs/"+ bookId + "/" + chapterId + ".html";
-        //创建爬虫,添加页面处理器以及url
-        //createSpider(new NovelProcessor(processListener), url);
-        //sendRequestWithOkHttp(bookLibURL + "/bkxs/"+ bookId + "/" + chapterId + ".html");
-        //设置字体大小
         //创建后台爬虫服务
         Intent intentService = new Intent(this, SpiderService.class);
         startService(intentService);   //启动服务
         bindService(intentService, connection, BIND_AUTO_CREATE);    //绑定服务
-        //为了防止服务绑定不成功，首次创建活动先使用子线程获取内容，待点击下一章或上一章再使用服务获取内容
-        sendRequestWithJsoup(bookUrl);
+        // 获取用户设置
+        SharedPreferences preferences = getSharedPreferences("readingSet", MODE_PRIVATE);
+        textSize = preferences.getFloat("textSize", 25);
+        colorCode = preferences.getString("backgroundColor","#C7EDCC");
+        //设置字体大小
         contentText.setTextSize(textSize);
         //设置背景色
         masterLayout.setBackgroundColor(Color.parseColor(colorCode));
@@ -179,6 +180,16 @@ public class ReadingActivity extends AppCompatActivity implements View.OnClickLi
         });
     }
 
+
+    @Override
+    protected void onResume(){
+        //避免软件被系统的伪后台杀死而没有重新调用onCreate()方法导致无法加载当前阅读章节，把爬虫放在onResume()中执行
+        super.onResume();
+        String bookUrl = bookLibURL + "/bkxs/"+ bookId + "/" + chapterId + ".html";
+        //为了防止服务绑定不成功，首次创建活动先使用子线程获取内容，待点击下一章或上一章再使用服务获取内容
+        sendRequestWithJsoup(bookUrl);
+    }
+
     @Override
     public void onClick(View v){
         switch (v.getId()){
@@ -206,11 +217,10 @@ public class ReadingActivity extends AppCompatActivity implements View.OnClickLi
     public void onPause(){
         //重写onPause()方法，在活动不可见时保存当前书目的阅读章节
         super.onPause();
-        ReadingRecord record = new ReadingRecord();
-        record.setBookNum(bookId);
-        record.setChapterNum(chapterId);
-        record.setName(bookName);
-        record.save();
+        Book book = new Book();
+        book.setBookNum(bookId);
+        book.setChapterNum(chapterId);
+        HandleDatabeseUtil.updateBook(dbHelper, book);
     }
 
     @Override
@@ -233,41 +243,6 @@ public class ReadingActivity extends AppCompatActivity implements View.OnClickLi
         SharedPreferences.Editor editor = getSharedPreferences("readingSet",MODE_PRIVATE).edit();
         editor.putFloat("textSize",textSize);
         editor.apply();
-    }
-
-    //设置字体大小
-    public static void setTextSize(float size){
-        textSize = size;
-    }
-
-    //设置背景色
-    public static void setBackgroundColor(String code){
-        colorCode = code;
-    }
-
-    //获取字体大小
-    public static float getTextSize(){
-        return textSize;
-    }
-
-    //获取背景色十六进制代码
-    public static String getBackgroundColorCode(){
-        return colorCode;
-    }
-
-    //设置上一章链接
-    public void setLastChapterURL(String lastChapterURL){
-        this.lastChapterURL = lastChapterURL;
-    }
-
-    //设置下一章链接
-    public void setNextChapterURL(String nextChapterURL){
-        this.nextChapterURL = nextChapterURL;
-    }
-
-    //设置书名
-    public void setBookName(String bookName){
-        this.bookName = bookName;
     }
 
     //通过url设置书号以及章节号
@@ -327,7 +302,8 @@ public class ReadingActivity extends AppCompatActivity implements View.OnClickLi
                     Document page = Jsoup.connect(address).timeout(10000).get();
                     showContentWithJsoup(page.body());
                 }catch (IOException e){
-                    e.printStackTrace();
+                    Toast.makeText(ReadingActivity.this,"请检查网络设置或章节号有误，尝试删除书籍重新添加", Toast.LENGTH_SHORT).show();
+                    finish();
                 }
             }
         }).start();
@@ -349,11 +325,11 @@ public class ReadingActivity extends AppCompatActivity implements View.OnClickLi
                 lastChapterURL = "http://www.bkxs.net"+body.getElementsByClass("pre").get(0).attr("href");
                 nextChapterURL = "http://www.bkxs.net"+body.getElementsByClass("next").get(0).attr("href");
                 //保存当前阅读进度
-                ReadingRecord book = new ReadingRecord();
+                Book book = new Book();
                 book.setName(novelName);
                 book.setBookNum(bookId);
                 book.setChapterNum(chapterId);
-                book.save();
+                HandleDatabeseUtil.updateBook(dbHelper, book);
                 //设置内容
                 chapterText.setText(chapterTitle);
                 contentText.setText(novelContent);

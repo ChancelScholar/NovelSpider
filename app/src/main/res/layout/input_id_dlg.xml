@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="20dp"
+    android:background="@drawable/corners_bg">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="添加书籍"
+        android:textSize="24dp"
+        android:gravity="center"/>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textSize="20dp"
+        android:text="请到以下网站查找书目，进入所需要看的章节，查看链接上的书号以及章节号（第一个数字为书号，第二个数字为章节号）："/>
+
+    <TextView
+        android:id="@+id/web_link"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="http://www.bkxs.net/"
+        android:textSize="20dp"
+        android:textIsSelectable="true"/>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="链接如http://www.bkxs.net/bkxs/69888/28239292.html\n书号69888，章节号28239292"
+        android:textSize="20dp"/>
+
+    <TableLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <TableRow>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="书号："
+                android:layout_marginLeft="20dp"
+                android:textSize="18dp"/>
+
+            <EditText
+                android:id="@+id/book_num"
+                android:layout_height="wrap_content"
+                android:layout_width="250dp" />
+        </TableRow>
+
+        <TableRow>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="20dp"
+                android:text="章节号："
+                android:textSize="18dp"/>
+
+            <EditText
+                android:id="@+id/chapter_num"
+                android:layout_height="wrap_content"
+                android:layout_width="250dp" />
+        </TableRow>
+    </TableLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <Button
+            android:id="@+id/confirm"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+
+            android:text="确定" />
+
+        <Button
+            android:id="@+id/cancel"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="取消"/>
+    </LinearLayout>
+</LinearLayout>
