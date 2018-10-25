@@ -2,6 +2,7 @@ package com.example.administrator.novelspider;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
+import android.app.Dialog;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
@@ -214,10 +215,10 @@ public class MainActivity extends AppCompatActivity{
 
     //添加书籍对话框
     private void showInputIdDialog(){
-        final AlertDialog inputDialog = new AlertDialog.Builder(this)
-                .setTitle("添加书籍")
-                .setCancelable(false)
-                .create();
+        //定制的AlertDialog使用EditText会无法弹出软键盘，改用Dialog即可
+        final Dialog inputDialog = new Dialog(this);
+        inputDialog.setTitle("添加书籍");
+        inputDialog.setCancelable(false);
         inputDialog.show();
         Window window = inputDialog.getWindow();
         window.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));      //设置透明背景
