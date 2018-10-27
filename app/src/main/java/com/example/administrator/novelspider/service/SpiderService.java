@@ -15,8 +15,6 @@ public class SpiderService extends Service {
     public SpiderService() {
     }
 
-
-
     private SpiderBinder mBinder = new SpiderBinder();
 
     @Override

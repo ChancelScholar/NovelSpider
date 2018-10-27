@@ -36,7 +36,7 @@ public class HandleDatabeseUtil {
     public static int updateBook(BookDatabaseHelper helper, Book book){
         SQLiteDatabase db = helper.getWritableDatabase();
         Cursor cursor = db.query("Book", null, "id = ?", new String[]{book.getBookNum()}, null, null, null);
-        if(cursor.getColumnCount() <= 0){
+        if(cursor.getCount() <= 0){
             return NOT_EXIST;
         }
         ContentValues values = new ContentValues();
@@ -70,5 +70,23 @@ public class HandleDatabeseUtil {
     public static void deleteBook(BookDatabaseHelper helper, Book book){
         SQLiteDatabase db = helper.getWritableDatabase();
         db.delete("Book", "id = ?", new String[]{book.getBookNum()});
+    }
+
+    //根据id获取书籍信息
+    public static Book getBookById(BookDatabaseHelper helper, String id){
+        SQLiteDatabase db = helper.getReadableDatabase();
+        Cursor cursor = db.query("Book", null, "id = ?", new String[]{id}, null, null, null);
+        Book book = new Book();
+        if(cursor.getCount() > 0){
+            cursor.moveToFirst();
+            book.setBookNum(String.valueOf(cursor.getInt(cursor.getColumnIndex("id"))));
+            book.setName(cursor.getString(cursor.getColumnIndex("name")));
+            book.setChapterNum(cursor.getString(cursor.getColumnIndex("chapterNum")));
+            book.setBookImage(cursor.getString(cursor.getColumnIndex("bookImage")));
+            //因数据库无法存储bitmap对象，故需对每一本书根据图像名重新加载封面
+            book.setBitmap(ImageFileHandleUtil.getImageBitmap(book.getBookImage()));
+            return book;
+        }
+        return null;
     }
 }

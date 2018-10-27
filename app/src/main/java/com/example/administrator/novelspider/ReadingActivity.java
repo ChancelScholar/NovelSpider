@@ -1,5 +1,6 @@
 package com.example.administrator.novelspider;
 
+import android.annotation.SuppressLint;
 import android.content.ClipboardManager;
 import android.content.ComponentName;
 import android.content.Context;
@@ -7,7 +8,10 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.graphics.Color;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Message;
+import android.support.annotation.RequiresPermission;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -77,6 +81,23 @@ public class ReadingActivity extends AppCompatActivity implements View.OnClickLi
         }
     };
 
+    //异步处理网络异常
+    private static final int IOEXCEPTION = 1;
+    @SuppressLint("HandlerLeak")
+    private Handler handler = new Handler(){
+        @Override
+        public void handleMessage(Message message){
+            switch (message.what){
+                case IOEXCEPTION:
+                    Toast.makeText(ReadingActivity.this,"请检查网络设置或章节号有误，尝试删除书籍重新添加", Toast.LENGTH_SHORT).show();
+                    break;
+                default:
+                    Toast.makeText(ReadingActivity.this,"软件出现未知问题，请尽快联系软件制作人员",Toast.LENGTH_SHORT);
+                    break;
+            }
+        }
+    };
+
     //创建服务以及服务连接
     private SpiderService.SpiderBinder spiderBinder;
 
@@ -107,7 +128,11 @@ public class ReadingActivity extends AppCompatActivity implements View.OnClickLi
         dbHelper = new BookDatabaseHelper(this, "BookStore.db", null, 2);
         Intent intent = getIntent();
         bookId = intent.getStringExtra("book_id");
-        chapterId = intent.getStringExtra("chapter_id");
+        //避免软件被系统的伪后台杀死，重新获取intent中的章节号，导致章节号没有及时更新，故直接从数据库中获取章节号
+        Book book = HandleDatabeseUtil.getBookById(dbHelper, bookId);
+        String bookUrl = bookLibURL + "/bkxs/"+ book.getBookNum() + "/" + book.getChapterNum() + ".html";
+        //为了防止服务绑定不成功，首次创建活动先使用子线程获取内容，待点击下一章或上一章再使用服务获取内容
+        sendRequestWithJsoup(bookUrl);
         //创建后台爬虫服务
         Intent intentService = new Intent(this, SpiderService.class);
         startService(intentService);   //启动服务
@@ -180,26 +205,24 @@ public class ReadingActivity extends AppCompatActivity implements View.OnClickLi
         });
     }
 
-
-    @Override
-    protected void onResume(){
-        //避免软件被系统的伪后台杀死而没有重新调用onCreate()方法导致无法加载当前阅读章节，把爬虫放在onResume()中执行
-        super.onResume();
-        String bookUrl = bookLibURL + "/bkxs/"+ bookId + "/" + chapterId + ".html";
-        //为了防止服务绑定不成功，首次创建活动先使用子线程获取内容，待点击下一章或上一章再使用服务获取内容
-        sendRequestWithJsoup(bookUrl);
-    }
-
     @Override
     public void onClick(View v){
         switch (v.getId()){
             case R.id.lastChapter:
-                setBookAndChapterIdByURL(lastChapterURL);
-                spiderBinder.startSpider(lastChapterURL, processListener);
+                if(StringParser.isEmpty(lastChapterURL)){
+                    Toast.makeText(ReadingActivity.this, "请检查您的网络连接", Toast.LENGTH_SHORT).show();
+                }else{
+                    setBookAndChapterIdByURL(lastChapterURL);
+                    spiderBinder.startSpider(lastChapterURL, processListener);
+                }
                 break;
             case R.id.nextChapter:
-                setBookAndChapterIdByURL(nextChapterURL);
-                spiderBinder.startSpider(nextChapterURL, processListener);
+                if(StringParser.isEmpty(nextChapterURL)){
+                    Toast.makeText(ReadingActivity.this, "请检查您的网络连接", Toast.LENGTH_SHORT).show();
+                }else{
+                    setBookAndChapterIdByURL(nextChapterURL);
+                    spiderBinder.startSpider(nextChapterURL, processListener);
+                }
                 break;
             case R.id.increase_text_size:
                 changeTextSize(R.id.increase_text_size);
@@ -302,8 +325,9 @@ public class ReadingActivity extends AppCompatActivity implements View.OnClickLi
                     Document page = Jsoup.connect(address).timeout(10000).get();
                     showContentWithJsoup(page.body());
                 }catch (IOException e){
-                    Toast.makeText(ReadingActivity.this,"请检查网络设置或章节号有误，尝试删除书籍重新添加", Toast.LENGTH_SHORT).show();
-                    finish();
+                    Message message = new Message();
+                    message.what = IOEXCEPTION;
+                    handler.sendMessage(message);
                 }
             }
         }).start();
