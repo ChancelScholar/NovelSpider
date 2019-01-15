@@ -1,9 +1,11 @@
 package com.example.administrator.novelspider.task;
 
 import android.os.AsyncTask;
+import android.util.Log;
 
 import com.example.administrator.novelspider.listener.ProcessListener;
 import com.example.administrator.novelspider.po.Content;
+import com.example.administrator.novelspider.util.URLParser;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -43,12 +45,20 @@ public class SpiderTask extends AsyncTask<String, Integer, Integer> {
             novelContent = novelContent.substring(first, novelContent.length() - last);
             String lastChapterLink = "http://www.bkxs.net"+body.getElementsByClass("pre").get(0).attr("href");
             String nextChapterLink = "http://www.bkxs.net"+body.getElementsByClass("next").get(0).attr("href");
-            //保存章节名、章节内容、上一章链接、下一章链接、书名
+            //保存书号、章节号、章节名、章节内容、上一章链接、下一章链接、书名
+            content.setBookId(URLParser.getBookId(downloadUrl));
+            content.setChapterId(URLParser.getChapterId(downloadUrl));
             content.setChapterName(chapterTitle);
             content.setContent(novelContent);
             content.setLastChapterLink(lastChapterLink);
             content.setNextChapterLink(nextChapterLink);
             content.setBookName(novelName);
+            //休眠5秒后继续下个爬取任务
+            try{
+                Thread.sleep(5000);
+            }catch (InterruptedException e) {
+                Log.d("ThreadBug:", "线程无响应");
+            }
             return TYPE_SUCCESS;
         }catch (IOException e){
             e.printStackTrace();

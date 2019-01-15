@@ -12,9 +12,9 @@ import android.widget.TextView;
 
 import com.example.administrator.novelspider.MainActivity;
 import com.example.administrator.novelspider.R;
+import com.example.administrator.novelspider.dao.DatabaseHandler;
 import com.example.administrator.novelspider.dbhelper.BookDatabaseHelper;
 import com.example.administrator.novelspider.po.Book;
-import com.example.administrator.novelspider.util.HandleDatabeseUtil;
 
 import java.util.List;
 
@@ -28,12 +28,14 @@ public class BookAdapter extends BaseAdapter{
     private List<Book> books;
     private boolean isShowDelete = false;
     private Context mContext;
+    private DatabaseHandler dbHandler;
 
     public BookAdapter(List<Book> books, Context context){
         super();
         this.books = books;
         inflater = LayoutInflater.from(context);
         mContext = context;
+        dbHandler = new DatabaseHandler();
     }
 
     public void setIsShowDelete(boolean isShowDelete){
@@ -82,7 +84,7 @@ public class BookAdapter extends BaseAdapter{
                             @Override
                             public void onClick(DialogInterface dialog, int which) {
                                 BookDatabaseHelper helper = new BookDatabaseHelper(mContext, "BookStore.db", null, 2);
-                                HandleDatabeseUtil.deleteBook(helper, book);
+                                dbHandler.deleteBook(helper, book);
                                 books.remove(position);
                                 notifyDataSetChanged();
                                 if(books.size() == 0){    //如果所有书籍都删除完了就自动取消删除状态

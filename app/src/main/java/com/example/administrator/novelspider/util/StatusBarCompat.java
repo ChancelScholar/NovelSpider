@@ -10,6 +10,7 @@ import android.view.ViewGroup;
 import static android.graphics.Color.*;
 
 /**
+ * 状态栏设置工具
  * Created by Administrator on 2018/9/27 0027.
  */
 

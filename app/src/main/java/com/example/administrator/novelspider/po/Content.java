@@ -6,12 +6,30 @@ package com.example.administrator.novelspider.po;
  */
 
 public class Content {
+    private String bookId;            //书号
+    private String chapterId;        //章节号
     private String chapterName;     //章节名
     private String content;          //文本内容
     private String lastChapterLink;    //上一章链接
     private String nextChapterLink;    //下一章链接
     private String bookName;         //书名
     private String imageUrl;         //封面url
+
+    public String getBookId() {
+        return bookId;
+    }
+
+    public void setBookId(String bookId) {
+        this.bookId = bookId;
+    }
+
+    public String getChapterId() {
+        return chapterId;
+    }
+
+    public void setChapterId(String chapterId) {
+        this.chapterId = chapterId;
+    }
 
     public String getLastChapterLink() {
         return lastChapterLink;

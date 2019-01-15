@@ -1,32 +1,28 @@
-package com.example.administrator.novelspider.util;
+package com.example.administrator.novelspider.dao;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Environment;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.RandomAccessFile;
-import java.util.RandomAccess;
 
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 
 /**
- * Created by Administrator on 2018/10/21 0021.
+ * Created by Administrator on 2019/1/14 0014.
  */
 
-public class ImageFileHandleUtil {
+public class ImageHandle {
     public static final int SUCCESS = 0;
     public static final int FAIL = -1;
 
     //保存图像文件
-    public static int saveImageFile(String url){
+    public int saveImageFile(String url){
         InputStream is = null;
         RandomAccessFile saveFile = null;
         File file = null;
@@ -37,7 +33,7 @@ public class ImageFileHandleUtil {
             if(file.exists()){
                 return SUCCESS;
             }else{
-                file.createNewFile();
+                boolean success = file.createNewFile();
             }
             //已下载长度
             long downloadedLength = 0;
@@ -76,7 +72,7 @@ public class ImageFileHandleUtil {
     }
 
     //读取图像文件
-    public static Bitmap getImageBitmap(String fileName){
+    public Bitmap getImageBitmap(String fileName){
         File file = null;
         String directory = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).getPath() + "/" + fileName;
         Bitmap bitmap = null;

@@ -1,7 +1,6 @@
 package com.example.administrator.novelspider;
 
 import android.Manifest;
-import android.annotation.SuppressLint;
 import android.app.Dialog;
 import android.content.ClipboardManager;
 import android.content.Context;
@@ -29,10 +28,10 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.administrator.novelspider.Adapter.BookAdapter;
+import com.example.administrator.novelspider.dao.DatabaseHandler;
+import com.example.administrator.novelspider.dao.ImageHandle;
 import com.example.administrator.novelspider.dbhelper.BookDatabaseHelper;
 import com.example.administrator.novelspider.po.Book;
-import com.example.administrator.novelspider.util.HandleDatabeseUtil;
-import com.example.administrator.novelspider.util.ImageFileHandleUtil;
 import com.example.administrator.novelspider.util.StatusBarCompat;
 import com.example.administrator.novelspider.util.StringParser;
 
@@ -58,25 +57,31 @@ public class MainActivity extends AppCompatActivity{
     private static boolean isShowDelete = false;
     private BookDatabaseHelper dbHelper;  //数据库操作帮手
     private static boolean isLongClick = false;     //区分长按和点击
+    private ImageHandle imageHandle;     //图像文件处理类
+    private DatabaseHandler dbHandler;   //数据库处理类
 
     public static final int UPDATE_BOOKS = 1;
-    @SuppressLint("HandlerLeak")
-    private Handler handler = new Handler(){          //异步消息处理
-        public void handleMessage(Message message){
-            switch (message.what){
+    //使用接口返回处理，避免编写不规范造成强连接，导致内存泄露，所以应该使用弱连接的写法
+    private Handler handler = new Handler(new Handler.Callback() {
+        @Override
+        public boolean handleMessage(Message msg) {
+            switch (msg.what){
                 case UPDATE_BOOKS:
                     bookAdapter.notifyDataSetChanged();
                     break;
                 default:
                     break;
             }
+            return false;
         }
-    };
+    });
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        imageHandle = new ImageHandle();
+        dbHandler = new DatabaseHandler();
         bookLib = (GridView) findViewById(R.id.gridview);
         dbHelper = new BookDatabaseHelper(this,"BookStore.db", null, 2);
         floatingButton = (FloatingActionButton) findViewById(R.id.add_book);
@@ -88,6 +93,11 @@ public class MainActivity extends AppCompatActivity{
         floatingButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                //若当前页面在删除状态，则退出删除状态
+                if(isShowDelete){
+                    bookAdapter.setIsShowDelete(false);
+                    isShowDelete = false;
+                }
                 showInputIdDialog();
             }
         });
@@ -102,7 +112,7 @@ public class MainActivity extends AppCompatActivity{
 
     private void initBooks(){
         //获取所有书目
-        books = HandleDatabeseUtil.getAllBooks(dbHelper);
+        books = dbHandler.getAllBooks(dbHelper);
     }
 
     @Override
@@ -283,9 +293,9 @@ public class MainActivity extends AppCompatActivity{
                     book.setName(bookName);
                     book.setImageUrl(imageUrl);
                     //保存图片
-                    if(ImageFileHandleUtil.SUCCESS == ImageFileHandleUtil.saveImageFile(book.getImageUrl())){
-                        book.setBitmap(ImageFileHandleUtil.getImageBitmap(book.getBookImage()));
-                        HandleDatabeseUtil.insertBook(dbHelper, book);
+                    if(ImageHandle.SUCCESS == imageHandle.saveImageFile(book.getImageUrl())){
+                        book.setBitmap(imageHandle.getImageBitmap(book.getBookImage()));
+                        dbHandler.insertBook(dbHelper, book);
                         books.add(book);
                         //异步更新书架
                         Message message = new Message();
