@@ -118,16 +118,36 @@
                         android:layout_height="wrap_content"/>
                 </LinearLayout>
 
-                <Button
-                    android:id="@+id/catalogue_button"
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="目录"
-                    android:textSize="50px"
-                    android:background="@drawable/buttonstyle"
-                    android:alpha="0.8"
-                    android:textColor="@color/white"
-                    android:layout_margin="5dp"/>
+                    android:orientation="horizontal">
+
+                    <Button
+                        android:id="@+id/catalogue_button"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="目录"
+                        android:textSize="50px"
+                        android:background="@drawable/buttonstyle"
+                        android:alpha="0.8"
+                        android:textColor="@color/white"
+                        android:layout_margin="5dp"/>
+
+                    <Button
+                        android:id="@+id/cache_button"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="自动缓存：开"
+                        android:textSize="50px"
+                        android:background="@drawable/buttonstyle"
+                        android:alpha="0.8"
+                        android:textColor="@color/white"
+                        android:layout_margin="5dp"/>
+                </LinearLayout>
+
             </LinearLayout>
         </RelativeLayout>
     </FrameLayout>

@@ -90,6 +90,8 @@ public class ReadingActivity extends AppCompatActivity implements View.OnClickLi
     private RelativeLayout settingPanel;              //设置面板
     private boolean isFirstClick = true;            //监听是否是第一次点击,显示设置面板
     private Button catalogueButton;                  //目录按钮
+    private Button cacheButton;                       //缓存开关
+    private boolean cacheStatus = false;            //缓存状态
 
     private DatabaseHandler dbHandler;                //数据库处理类
     private JsonHandler jsonHandler;                  //Json数据处理类
@@ -327,6 +329,31 @@ public class ReadingActivity extends AppCompatActivity implements View.OnClickLi
                 chapterDrawerLayout.openDrawer(GravityCompat.START);
             }
         });
+        //初始化缓存开关按钮
+        cacheButton = (Button) findViewById(R.id.cache_button);
+        cacheStatus = preferences.getBoolean("cacheStatus", false);    //获取用户的缓存设置
+        if(cacheStatus){
+            cacheButton.setText("自动缓存：关");
+        }
+        cacheButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                SharedPreferences.Editor editor = getSharedPreferences("readingSet",MODE_PRIVATE).edit();
+                if(SpiderService.START == spiderBinder.getCacheStatus()){
+                    spiderBinder.setIsStart(false);
+                    cacheStatus = false;
+                    cacheButton.setText("自动缓存：开");
+                    editor.putBoolean("cacheStatus", false);
+                }else if (SpiderService.STOP == spiderBinder.getCacheStatus()){
+                    spiderBinder.setIsStart(true);
+                    cacheStatus = true;
+                    spiderBinder.startSpider(bookLibURL + "/bkxs/" + bookId + "/" + chapterId + ".html");
+                    cacheButton.setText("自动缓存：关");
+                    editor.putBoolean("cacheStatus", true);
+                }
+                editor.apply();
+            }
+        });
     }
 
     public void setBackgroundColor(BackgroundColor color){
@@ -495,7 +522,10 @@ public class ReadingActivity extends AppCompatActivity implements View.OnClickLi
                         message.what = IOEXCEPTION;
                         handler.sendMessage(message);
                     }
-                    spiderBinder.startSpider(address);
+                    if(cacheStatus){
+                        spiderBinder.setIsStart(true);
+                        spiderBinder.startSpider(address);
+                    }
                 }
             }).start();
         }else{   //存在则直接显示
@@ -505,6 +535,10 @@ public class ReadingActivity extends AppCompatActivity implements View.OnClickLi
             nextChapterURL = content.getNextChapterLink();
             if(isFirstCreate){
                 sendRequestToGetChapterList(bookLibURL + "/bkxs/" + bookId + "/");
+                if(cacheStatus){
+                    spiderBinder.setIsStart(true);
+                    spiderBinder.startSpider(address);
+                }
                 isFirstCreate = false;
             }
         }

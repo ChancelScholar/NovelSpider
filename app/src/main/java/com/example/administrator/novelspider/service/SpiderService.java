@@ -17,11 +17,15 @@ import com.example.administrator.novelspider.util.URLParser;
 import java.io.IOException;
 
 public class SpiderService extends Service {
+    public static final int START = 1;
+    public static final int STOP = 2;
+
     private SpiderTask spiderTask;       //爬虫线程
     private String downloadUrl;          //爬取的地址
     private boolean isFirstRequest = true;    //是否是第一次发出请求，用于判断该章节是否是最后一章，若是，则获取这一章的最新信息
     private JsonHandler jsonHandler = new JsonHandler();    //数据保存类
     private boolean isPause = false;    //是否暂停爬取
+    private boolean isStart = false;    //是否开启缓存
     //爬虫接口，完成网页解析后保存章节数据，并继续启动爬虫获取数据，实现缓存的效果
     private ProcessListener listener = new ProcessListener() {
         @Override
@@ -34,7 +38,7 @@ public class SpiderService extends Service {
             //把该章节添加到章节数据
             ReadingActivity.addContent(content);
             mBinder.releaseTask();
-            if(!isPause){
+            if(!isPause && isStart){
                 mBinder.startSpider(content.getNextChapterLink());
             }
         }
@@ -98,6 +102,15 @@ public class SpiderService extends Service {
         //暂停爬取
         public void pause(){
             isPause = true;
+        }
+
+        //获取缓存状态
+        public int getCacheStatus(){
+            return isStart?START:STOP;
+        }
+
+        public void setIsStart(boolean status){
+            isStart = status;
         }
     }
 }
