@@ -78,10 +78,9 @@ public class ReadingActivity extends AppCompatActivity implements View.OnClickLi
 
     private LinearLayout masterLayout;         //主界面的布局管理器
     private String colorCode = "#C7EDCC";    //默认背景色
-
-    private BookDatabaseHelper dbHelper;       //用于数据库操作
-    private RecyclerView backgroundColorListView;         //背景色设置列表
+    private RecyclerView backgroundColorListView;    //背景色设置列表
     private BackgroundColorAdapter colorAdapter;       //背景色设置适配器
+
     private Map<String, Integer> chapterSeriesNum = new HashMap<>();     //章节号对应的排序序号，用于选中某一项
     private List<Chapter> chapterList = new ArrayList<>();                //章节列表
     private ListView chapterListView;                 //章节列表ListView
@@ -93,6 +92,7 @@ public class ReadingActivity extends AppCompatActivity implements View.OnClickLi
     private Button cacheButton;                       //缓存开关
     private boolean cacheStatus = false;            //缓存状态
 
+    private BookDatabaseHelper dbHelper;              //用于数据库操作
     private DatabaseHandler dbHandler;                //数据库处理类
     private JsonHandler jsonHandler;                  //Json数据处理类
     private static Map<String, Content> contents;      //章节存储器
@@ -340,12 +340,11 @@ public class ReadingActivity extends AppCompatActivity implements View.OnClickLi
             public void onClick(View v) {
                 SharedPreferences.Editor editor = getSharedPreferences("readingSet",MODE_PRIVATE).edit();
                 if(SpiderService.START == spiderBinder.getCacheStatus()){
-                    spiderBinder.setIsStart(false);
+                    spiderBinder.pause();
                     cacheStatus = false;
                     cacheButton.setText("自动缓存：开");
                     editor.putBoolean("cacheStatus", false);
                 }else if (SpiderService.STOP == spiderBinder.getCacheStatus()){
-                    spiderBinder.setIsStart(true);
                     cacheStatus = true;
                     spiderBinder.startSpider(bookLibURL + "/bkxs/" + bookId + "/" + chapterId + ".html");
                     cacheButton.setText("自动缓存：关");
@@ -431,6 +430,16 @@ public class ReadingActivity extends AppCompatActivity implements View.OnClickLi
         book.setBookNum(bookId);
         book.setChapterNum(chapterId);
         dbHandler.updateBook(dbHelper, book);
+        //如果当前阅读的章节是最后一章则删除该章节的数据
+        if(URLParser.isLastChapter(nextChapterURL)){
+            Content content = getContent(chapterId);
+            try {
+                jsonHandler.deleteChapter(content);
+                contents.remove(chapterId);
+            } catch (IOException e) {
+                Log.d("DeleteData:", "delete fail");
+            }
+        }
     }
 
     @Override
@@ -522,10 +531,6 @@ public class ReadingActivity extends AppCompatActivity implements View.OnClickLi
                         message.what = IOEXCEPTION;
                         handler.sendMessage(message);
                     }
-                    if(cacheStatus){
-                        spiderBinder.setIsStart(true);
-                        spiderBinder.startSpider(address);
-                    }
                 }
             }).start();
         }else{   //存在则直接显示
@@ -536,7 +541,6 @@ public class ReadingActivity extends AppCompatActivity implements View.OnClickLi
             if(isFirstCreate){
                 sendRequestToGetChapterList(bookLibURL + "/bkxs/" + bookId + "/");
                 if(cacheStatus){
-                    spiderBinder.setIsStart(true);
                     spiderBinder.startSpider(address);
                 }
                 isFirstCreate = false;
@@ -571,6 +575,25 @@ public class ReadingActivity extends AppCompatActivity implements View.OnClickLi
                 contentText.setText("\n" + chapterTitle + "\n" + novelContent);
                 //回滚到顶部
                 backToTop();
+                //保存章节内容
+                Content content = new Content();
+                content.setBookId(bookId);
+                content.setChapterId(chapterId);
+                content.setChapterName(chapterTitle);
+                content.setContent(novelContent);
+                content.setLastChapterLink(lastChapterURL);
+                content.setNextChapterLink(nextChapterURL);
+                content.setBookName(novelName);
+                try {
+                    jsonHandler.saveChapter(content);
+                } catch (IOException e) {
+                    Log.d("SaveData:", "Save Fail");
+                }
+                contents.put(chapterId, content);
+                //开启爬虫获取下一章内容
+                if(cacheStatus){
+                    spiderBinder.startSpider(lastChapterURL);
+                }
                 //获取完章节后，若没有章节列表则进行获取章节列表
                 if(!hasChapterList) {
                     sendRequestToGetChapterList(bookLibURL + "/bkxs/" + bookId + "/");

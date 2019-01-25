@@ -42,6 +42,16 @@ public class JsonHandler {
         writer.flush();
     }
 
+    //删除章节数据
+    public void deleteChapter(Content content) throws IOException{
+        if(content == null) return;
+        String directory = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).getPath();
+        File file = new File(directory + "/novelspider/" + content.getBookId() + "/chapters/" + content.getChapterId() + ".json");
+        if(file.exists()){    //文件存在则删除新文件
+            file.delete();
+        }
+    }
+
     //获取章节数据
     public Map<String, Content> getChapters(String bookId) throws IOException{
         Map<String, Content> contents = new HashMap<>();
