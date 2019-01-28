@@ -137,9 +137,7 @@ public class ReadingActivity extends AppCompatActivity implements View.OnClickLi
                 case GET_CHAPTER_LIST_SUCCESS:
                     System.out.println("展示章节列表");
                     Chapter chapter = (Chapter) msg.obj;
-                    chapterListAdapter.setSelectedNum(chapterSeriesNum.get(chapter.getId()));
-                    chapterListView.setSelection(chapterSeriesNum.get(chapter.getId()));
-                    chapterListAdapter.notifyDataSetChanged();
+                    refreshChapterList(chapter.getId());
                     break;
                 default:
                     Toast.makeText(ReadingActivity.this,"软件出现未知问题，请尽快联系软件制作人员",Toast.LENGTH_SHORT).show();
@@ -392,8 +390,8 @@ public class ReadingActivity extends AppCompatActivity implements View.OnClickLi
                 if(StringParser.isEmpty(lastChapterURL)){
                     Toast.makeText(ReadingActivity.this, "请检查您的网络连接", Toast.LENGTH_SHORT).show();
                 }else if(lastChapterURL.split("/").length == 6){     //是否有上一章
-                    String url = lastChapterURL;   //保存上一章的链接，避免获取数据后改变了上一章的链接
                     sendRequestWithJsoup(lastChapterURL);
+                    refreshChapterList(chapterId);
                 }else{
                     Toast.makeText(ReadingActivity.this, "这是第一章", Toast.LENGTH_SHORT).show();
                 }
@@ -403,6 +401,7 @@ public class ReadingActivity extends AppCompatActivity implements View.OnClickLi
                     Toast.makeText(ReadingActivity.this, "请检查您的网络连接", Toast.LENGTH_SHORT).show();
                 }else if(nextChapterURL.split("/").length == 6){    //是否还有下一章
                     sendRequestWithJsoup(nextChapterURL);
+                    refreshChapterList(chapterId);
                 }else{
                     Toast.makeText(ReadingActivity.this, "已是最后一章", Toast.LENGTH_SHORT).show();
                 }
@@ -514,6 +513,13 @@ public class ReadingActivity extends AppCompatActivity implements View.OnClickLi
             bookNameText.setText(content.getBookName());
             contentText.setText("\n" + content.getChapterName() +"\n"+ content.getContent());
         }
+    }
+
+    //刷新章节列表
+    private void refreshChapterList(String chapterId){
+        chapterListAdapter.setSelectedNum(chapterSeriesNum.get(chapterId));
+        chapterListView.setSelection(chapterSeriesNum.get(chapterId));
+        chapterListAdapter.notifyDataSetChanged();
     }
 
     //为了避免后台服务绑定失败，使用子线程获取内容
