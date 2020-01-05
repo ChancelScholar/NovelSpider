@@ -8,4 +8,13 @@
         <item name="colorAccent">@color/colorAccent</item>
     </style>
 
+    <!-- 添加编辑文本框的下划线样式-->
+    <style name="MyEditText" parent="Theme.AppCompat.Light">
+        <!--未被选中时下划线的颜色-->
+        <item name="colorControlNormal">#b7b7b7</item>
+        <!--文本的颜色-->
+        <item name="android:textColor">#838383</item>
+        <!--被选中时下划线的颜色-->
+        <item name="colorControlActivated">#838383</item>
+    </style>
 </resources>

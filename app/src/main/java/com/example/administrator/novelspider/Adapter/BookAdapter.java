@@ -3,6 +3,8 @@ package com.example.administrator.novelspider.Adapter;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -10,6 +12,7 @@ import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.bumptech.glide.Glide;
 import com.example.administrator.novelspider.MainActivity;
 import com.example.administrator.novelspider.R;
 import com.example.administrator.novelspider.dao.DatabaseHandler;
@@ -35,7 +38,8 @@ public class BookAdapter extends BaseAdapter{
         this.books = books;
         inflater = LayoutInflater.from(context);
         mContext = context;
-        dbHandler = new DatabaseHandler();
+        BookDatabaseHelper helper = new BookDatabaseHelper(mContext, "BookStore.db", null, 2);
+        dbHandler = new DatabaseHandler(helper);
     }
 
     public void setIsShowDelete(boolean isShowDelete){
@@ -64,14 +68,19 @@ public class BookAdapter extends BaseAdapter{
 
     @Override
     public View getView(final int position, View convertView, final ViewGroup parent){
-        final Book book = books.get(position);
+        Book book = books.get(position);
         ViewHolder viewHolder;
         convertView = inflater.inflate(R.layout.book_item, parent,  false);
         viewHolder = new ViewHolder();
         viewHolder.imageView = (ImageView) convertView.findViewById(R.id.book_image);
         viewHolder.textView = (TextView) convertView.findViewById(R.id.book_name);
         viewHolder.deleteImage = (ImageView) convertView.findViewById(R.id.delete_img);
-        viewHolder.imageView.setImageBitmap(book.getBitmap());
+        if(book.getBitmap() != null){
+            viewHolder.imageView.setImageBitmap(book.getBitmap());
+        }else{
+            Bitmap bitmap = BitmapFactory.decodeResource(mContext.getResources(), R.drawable.no_cover);
+            viewHolder.imageView.setImageBitmap(bitmap);
+        }
         viewHolder.textView.setText(book.getName());
         viewHolder.deleteImage.setVisibility(isShowDelete?View.VISIBLE:View.GONE);
         viewHolder.deleteImage.setOnClickListener(new View.OnClickListener(){
@@ -83,8 +92,7 @@ public class BookAdapter extends BaseAdapter{
                         .setPositiveButton("确定", new DialogInterface.OnClickListener() {
                             @Override
                             public void onClick(DialogInterface dialog, int which) {
-                                BookDatabaseHelper helper = new BookDatabaseHelper(mContext, "BookStore.db", null, 2);
-                                dbHandler.deleteBook(helper, book);
+                                dbHandler.deleteBook(books.get(position));
                                 books.remove(position);
                                 notifyDataSetChanged();
                                 if(books.size() == 0){    //如果所有书籍都删除完了就自动取消删除状态

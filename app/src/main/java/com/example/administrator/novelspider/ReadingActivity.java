@@ -11,6 +11,7 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
 import android.os.Message;
+import android.provider.BlockedNumberContract;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBar;
@@ -40,6 +41,7 @@ import com.example.administrator.novelspider.po.Chapter;
 import com.example.administrator.novelspider.po.Content;
 import com.example.administrator.novelspider.po.Book;
 import com.example.administrator.novelspider.service.SpiderService;
+import com.example.administrator.novelspider.util.AnimationUtil;
 import com.example.administrator.novelspider.util.StatusBarCompat;
 import com.example.administrator.novelspider.util.StringParser;
 import com.example.administrator.novelspider.util.URLParser;
@@ -50,7 +52,6 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.io.IOException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -74,7 +75,7 @@ public class ReadingActivity extends AppCompatActivity implements View.OnClickLi
     private Button increaseTextSizeBtn;     //增加文本字体大小按钮
     private Button decreaseTextSizeBtn;     //减小文本字体大小按钮
     private Button defaultTextSizeBtn;      //设置默认字体大小按钮
-    private float textSize = 20;    //默认大小为20px
+    private float textSize = 20;             //默认大小为20px
 
     private LinearLayout masterLayout;         //主界面的布局管理器
     private String colorCode = "#C7EDCC";    //默认背景色
@@ -89,6 +90,7 @@ public class ReadingActivity extends AppCompatActivity implements View.OnClickLi
     private RelativeLayout settingPanel;              //设置面板
     private boolean isFirstClick = true;            //监听是否是第一次点击,显示设置面板
     private Button catalogueButton;                  //目录按钮
+    private Button deleteChapterBtn;                 //删除本章缓存按钮
     private Button cacheButton;                       //缓存开关
     private boolean cacheStatus = false;            //缓存状态
 
@@ -193,8 +195,6 @@ public class ReadingActivity extends AppCompatActivity implements View.OnClickLi
 
     //初始化组件
     private void init(){
-        //初始化文件操作类
-        dbHandler = new DatabaseHandler();
         jsonHandler = new JsonHandler();
         //初始化章节存储器
         contents = new HashMap<>();
@@ -208,11 +208,13 @@ public class ReadingActivity extends AppCompatActivity implements View.OnClickLi
         decreaseTextSizeBtn = (Button) findViewById(R.id.decrease_text_size);
         defaultTextSizeBtn = (Button) findViewById(R.id.default_size);
         masterLayout = (LinearLayout) findViewById(R.id.master_layout);
+        //初始化文件操作类
         dbHelper = new BookDatabaseHelper(this, "BookStore.db", null, 2);
+        dbHandler = new DatabaseHandler(dbHelper);
         Intent intent = getIntent();
         bookId = intent.getStringExtra("book_id");
         //避免软件被系统的伪后台杀死，重新获取intent中的章节号，导致章节号没有及时更新，故直接从数据库中获取章节号
-        Book book = dbHandler.getBookById(dbHelper, bookId);
+        Book book = dbHandler.getBookById(bookId);
         //由于是使用chapterId来记录当前阅读章节，为了避免未点击下一章而退出活动导致chapterId为null，并更新了数据库内容，故需获取chapterId
         chapterId = book.getChapterNum();
         String bookUrl = bookLibURL + "/bkxs/"+ bookId + "/" + chapterId + ".html";
@@ -226,7 +228,7 @@ public class ReadingActivity extends AppCompatActivity implements View.OnClickLi
         // 获取用户设置，默认字体大小为20px
         SharedPreferences preferences = getSharedPreferences("readingSet", MODE_PRIVATE);
         textSize = preferences.getFloat("textSize", 20);
-        colorCode = preferences.getString("backgroundColor","#C7EDCC");
+        colorCode = preferences.getString("backgroundColor","#E2C8A7");
         //设置字体大小
         contentText.setTextSize(textSize);
         //设置背景色
@@ -269,18 +271,49 @@ public class ReadingActivity extends AppCompatActivity implements View.OnClickLi
                 return false;
             }
         });
+
+        //初始化章节列表的DrawerLayout
+        chapterDrawerLayout = (DrawerLayout) findViewById(R.id.chapter_draw_layout);
+        //初始化章节列表组件
+        chapterListView = (ListView) findViewById(R.id.chapter_list);
+        chapterListAdapter = new ChapterListAdapter(this, R.layout.chapter_list_item, chapterList);
+        chapterListView.setAdapter(chapterListAdapter);
+
+        //初始化设置面板
+        settingPanel = (RelativeLayout) findViewById(R.id.setting);
+        settingPanel.setVisibility(View.GONE);
+        //初始化章节目录按钮
+        catalogueButton = (Button) findViewById(R.id.catalogue_button);
+
+        //初始化删除本章缓存按钮
+        deleteChapterBtn = (Button) findViewById(R.id.delete_chapter_button);
+        //初始化缓存开关按钮
+        cacheButton = (Button) findViewById(R.id.cache_button);
+        cacheStatus = preferences.getBoolean("cacheStatus", false);    //获取用户的缓存设置
+        if(cacheStatus){
+            cacheButton.setText("自动缓存：关");
+        }
+        addListener();
+    }
+
+    //为组件添加监听器
+    private void addListener(){
         //点击内容组件弹出设置页面
         contentText.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(isFirstClick){     //第一次点击显示出设置面板
-                    settingPanel.setVisibility(View.VISIBLE);
+                if(isFirstClick){
+                    //第一次点击显示出设置面板
                     //隐藏上一章和下一章按钮
                     lastChapter.setVisibility(View.INVISIBLE);
                     nextChapter.setVisibility(View.INVISIBLE);
+                    //使用弹出效果
+                    settingPanel.setVisibility(View.VISIBLE);
+                    settingPanel.setAnimation(AnimationUtil.moveToViewLocation());
                     isFirstClick = false;
                 }else{
-                    settingPanel.setVisibility(View.INVISIBLE);
+                    settingPanel.setVisibility(View.GONE);
+                    settingPanel.setAnimation(AnimationUtil.moveToViewBottom());
                     //重新显示上一章下一章按钮
                     lastChapter.setVisibility(View.VISIBLE);
                     nextChapter.setVisibility(View.VISIBLE);
@@ -288,12 +321,7 @@ public class ReadingActivity extends AppCompatActivity implements View.OnClickLi
                 }
             }
         });
-        //初始化章节列表的DrawerLayout
-        chapterDrawerLayout = (DrawerLayout) findViewById(R.id.chapter_draw_layout);
-        //初始化章节列表组件
-        chapterListView = (ListView) findViewById(R.id.chapter_list);
-        chapterListAdapter = new ChapterListAdapter(this, R.layout.chapter_list_item, chapterList);
-        chapterListView.setAdapter(chapterListAdapter);
+
         //设置章节列表的点击监听器
         chapterListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
@@ -311,11 +339,8 @@ public class ReadingActivity extends AppCompatActivity implements View.OnClickLi
                 sendRequestWithJsoup(chapter.getUrl());
             }
         });
-        //初始化设置面板
-        settingPanel = (RelativeLayout) findViewById(R.id.setting);
-        settingPanel.setVisibility(View.INVISIBLE);
-        //初始化章节目录按钮
-        catalogueButton = (Button) findViewById(R.id.catalogue_button);
+
+        //打开目录按钮
         catalogueButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -327,12 +352,27 @@ public class ReadingActivity extends AppCompatActivity implements View.OnClickLi
                 chapterDrawerLayout.openDrawer(GravityCompat.START);
             }
         });
-        //初始化缓存开关按钮
-        cacheButton = (Button) findViewById(R.id.cache_button);
-        cacheStatus = preferences.getBoolean("cacheStatus", false);    //获取用户的缓存设置
-        if(cacheStatus){
-            cacheButton.setText("自动缓存：关");
-        }
+
+        //删除本章缓存
+        deleteChapterBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if(contents.get(chapterId) != null){
+                    try{
+                        jsonHandler.deleteChapter(contents.get(chapterId));
+                        //删除完毕后返回主页
+                        Toast.makeText(ReadingActivity.this, "删除成功", Toast.LENGTH_SHORT).show();
+                        onBackPressed();
+                    }catch (IOException e){
+                        Toast.makeText(ReadingActivity.this, "删除失败，请稍后重试", Toast.LENGTH_SHORT).show();
+                    }
+                }else{
+                    Toast.makeText(ReadingActivity.this, "暂无缓存", Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+
+        //缓存开关按钮
         cacheButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -428,7 +468,7 @@ public class ReadingActivity extends AppCompatActivity implements View.OnClickLi
         Book book = new Book();
         book.setBookNum(bookId);
         book.setChapterNum(chapterId);
-        dbHandler.updateBook(dbHelper, book);
+        dbHandler.updateBook(book);
         //如果当前阅读的章节是最后一章则删除该章节的数据
         if(URLParser.isLastChapter(nextChapterURL)){
             Content content = getContent(chapterId);
@@ -512,6 +552,7 @@ public class ReadingActivity extends AppCompatActivity implements View.OnClickLi
         }else{
             bookNameText.setText(content.getBookName());
             contentText.setText("\n" + content.getChapterName() +"\n"+ content.getContent());
+            backToTop();
         }
     }
 
@@ -531,6 +572,8 @@ public class ReadingActivity extends AppCompatActivity implements View.OnClickLi
                 public void run() {
                     try{
                         Document page = Jsoup.connect(address).timeout(10000).get();
+                        //若不使用缓存，由于页面数据无本章节id，需在此刷新chapterId
+                        chapterId = URLParser.getChapterId(address);
                         showContentWithJsoup(page.body());
                     }catch (IOException e){
                         Message message = new Message();
@@ -574,14 +617,10 @@ public class ReadingActivity extends AppCompatActivity implements View.OnClickLi
                 book.setName(novelName);
                 book.setBookNum(bookId);
                 book.setChapterNum(chapterId);
-                dbHandler.updateBook(dbHelper, book);
+                dbHandler.updateBook(book);
                 //获取书名并展示
                 bookNameText.setText(novelName);
-                //设置内容
-                contentText.setText("\n" + chapterTitle + "\n" + novelContent);
-                //回滚到顶部
-                backToTop();
-                //保存章节内容
+                //显示并保存章节内容
                 Content content = new Content();
                 content.setBookId(bookId);
                 content.setChapterId(chapterId);
@@ -590,6 +629,7 @@ public class ReadingActivity extends AppCompatActivity implements View.OnClickLi
                 content.setLastChapterLink(lastChapterURL);
                 content.setNextChapterLink(nextChapterURL);
                 content.setBookName(novelName);
+                showContent(content);
                 try {
                     jsonHandler.saveChapter(content);
                 } catch (IOException e) {

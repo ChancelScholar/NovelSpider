@@ -31,6 +31,7 @@ import com.example.administrator.novelspider.Adapter.BookAdapter;
 import com.example.administrator.novelspider.dao.DatabaseHandler;
 import com.example.administrator.novelspider.dao.ImageHandle;
 import com.example.administrator.novelspider.dbhelper.BookDatabaseHelper;
+import com.example.administrator.novelspider.listener.SearchListener;
 import com.example.administrator.novelspider.po.Book;
 import com.example.administrator.novelspider.util.StatusBarCompat;
 import com.example.administrator.novelspider.util.StringParser;
@@ -49,20 +50,20 @@ public class MainActivity extends AppCompatActivity{
     private EditText chapterIdText; //章节号
     private TextView webLink;       //网页链接文本
     boolean isCreateDB = false;    //是否创建数据库标志
-    private List<Book> books;      //书目列表
+    private static List<Book> books;      //书目列表
     private GridView bookLib;       //书架
-    private Book book = new Book();     //用于存储添加的书籍信息
-    private BookAdapter bookAdapter;   //书架适配器
+    private static Book book = new Book();     //用于存储添加的书籍信息
+    private static BookAdapter bookAdapter;   //书架适配器
     private FloatingActionButton floatingButton;     //添加书籍按钮
     private static boolean isShowDelete = false;
     private BookDatabaseHelper dbHelper;  //数据库操作帮手
     private static boolean isLongClick = false;     //区分长按和点击
-    private ImageHandle imageHandle;     //图像文件处理类
-    private DatabaseHandler dbHandler;   //数据库处理类
+    private static ImageHandle imageHandle;     //图像文件处理类
+    private static DatabaseHandler dbHandler;   //数据库处理类
 
     public static final int UPDATE_BOOKS = 1;
     //使用接口返回处理，避免编写不规范造成强连接，导致内存泄露，所以应该使用弱连接的写法
-    private Handler handler = new Handler(new Handler.Callback() {
+    private static Handler handler = new Handler(new Handler.Callback() {
         @Override
         public boolean handleMessage(Message msg) {
             switch (msg.what){
@@ -81,9 +82,9 @@ public class MainActivity extends AppCompatActivity{
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         imageHandle = new ImageHandle();
-        dbHandler = new DatabaseHandler();
         bookLib = (GridView) findViewById(R.id.gridview);
         dbHelper = new BookDatabaseHelper(this,"BookStore.db", null, 2);
+        dbHandler = new DatabaseHandler(dbHelper);
         floatingButton = (FloatingActionButton) findViewById(R.id.add_book);
         ActionBar actionBar = getSupportActionBar();
         //隐藏标题栏
@@ -98,7 +99,9 @@ public class MainActivity extends AppCompatActivity{
                     bookAdapter.setIsShowDelete(false);
                     isShowDelete = false;
                 }
-                showInputIdDialog();
+                //跳转到搜索页
+                Intent intent = new Intent(MainActivity.this, SearchActivity.class);
+                startActivity(intent);
             }
         });
         getGrants();
@@ -112,7 +115,7 @@ public class MainActivity extends AppCompatActivity{
 
     private void initBooks(){
         //获取所有书目
-        books = dbHandler.getAllBooks(dbHelper);
+        books = dbHandler.getAllBooks();
     }
 
     @Override
@@ -221,62 +224,7 @@ public class MainActivity extends AppCompatActivity{
         }
     }
 
-    //添加书籍对话框
-    private void showInputIdDialog(){
-        //定制的AlertDialog使用EditText会无法弹出软键盘，改用Dialog即可
-        final Dialog inputDialog = new Dialog(this);
-        inputDialog.setTitle("添加书籍");
-        inputDialog.setCancelable(false);
-        inputDialog.show();
-        Window window = inputDialog.getWindow();
-        window.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));      //设置透明背景
-        window.setContentView(R.layout.input_id_dlg);       //设置自定义布局
-        bookIdText = (EditText) window.findViewById(R.id.book_num);
-        chapterIdText = (EditText) window.findViewById(R.id.chapter_num);
-        Button confirmButton = (Button) window.findViewById(R.id.confirm);
-        Button cancelButton = (Button) window.findViewById(R.id.cancel);
-        //判空操作
-        if(StringParser.isEmpty(bookIdText.getText().toString()) || StringParser.isEmpty(chapterIdText.getText().toString())){
-            Toast.makeText(MainActivity.this,"书号或章节号未输入",Toast.LENGTH_SHORT);
-        }
-        //方便用户复制链接
-        webLink = (TextView) window.findViewById(R.id.web_link);
-        webLink.setOnLongClickListener(new View.OnLongClickListener(){
-            @Override
-            public boolean onLongClick(View v){
-                ClipboardManager clipboardManager = (ClipboardManager) getApplicationContext().getSystemService(Context.CLIPBOARD_SERVICE);
-                clipboardManager.setText(webLink.getText());
-                return false;
-            }
-        });
-        confirmButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                String bookId = bookIdText.getText().toString();
-                //判断是否已添加该书籍
-                boolean alreadyHave = false;
-                for(Book book:books){
-                    if(book.getBookNum().equalsIgnoreCase(bookId)){
-                        alreadyHave = true;
-                    }
-                }
-                if(!alreadyHave){
-                    getBookToSave(bookIdText.getText().toString(), chapterIdText.getText().toString());
-                }else{
-                    Toast.makeText(MainActivity.this, "你要添加的书籍已存在", Toast.LENGTH_SHORT);
-                }
-                inputDialog.dismiss();
-            }
-        });
-        cancelButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                inputDialog.dismiss();
-            }
-        });
-    }
-
-    private void getBookToSave(String bookId, String chapterId){
+    public static void getBookToSave(String bookId, String chapterId){
         book = new Book();
         book.setBookNum(bookId);
         book.setChapterNum(chapterId);
@@ -295,7 +243,7 @@ public class MainActivity extends AppCompatActivity{
                     //保存图片
                     if(ImageHandle.SUCCESS == imageHandle.saveImageFile(book.getImageUrl())){
                         book.setBitmap(imageHandle.getImageBitmap(book.getBookImage()));
-                        dbHandler.insertBook(dbHelper, book);
+                        dbHandler.insertBook(book);
                         books.add(book);
                         //异步更新书架
                         Message message = new Message();

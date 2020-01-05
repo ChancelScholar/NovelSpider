@@ -136,6 +136,18 @@
                         android:layout_margin="5dp"/>
 
                     <Button
+                        android:id="@+id/delete_chapter_button"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="删除本章缓存"
+                        android:textSize="50px"
+                        android:background="@drawable/buttonstyle"
+                        android:alpha="0.8"
+                        android:textColor="@color/white"
+                        android:layout_margin="5dp"/>
+
+                    <Button
                         android:id="@+id/cache_button"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
@@ -176,7 +188,9 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginLeft="3dp"
-            android:layout_marginTop="5dp">
+            android:layout_marginTop="5dp"
+            android:fastScrollEnabled="true"
+            android:focusable="true">
         </ListView>
     </LinearLayout>
 </android.support.v4.widget.DrawerLayout>

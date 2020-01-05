@@ -8,8 +8,8 @@ package com.example.administrator.novelspider.po;
 public class Content {
     private String bookId;            //书号
     private String chapterId;        //章节号
-    private String chapterName;     //章节名
-    private String content;          //文本内容
+    private String chapterName;      //章节名
+    private String content;           //文本内容
     private String lastChapterLink;    //上一章链接
     private String nextChapterLink;    //下一章链接
     private String bookName;         //书名

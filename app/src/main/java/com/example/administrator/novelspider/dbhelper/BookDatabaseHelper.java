@@ -13,6 +13,7 @@ import junit.runner.Version;
 public class BookDatabaseHelper extends SQLiteOpenHelper{
     public static final String CREATE_BOOK = "create table Book("
             + "id integer primary key,"
+            + "bookNum varchar(11),"
             + "chapterNum text,"
             + "name text,"
             + "bookImage text,"
